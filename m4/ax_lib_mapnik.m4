@@ -57,6 +57,7 @@ AC_DEFUN([AX_LIB_MAPNIK],
     )
 
     MAPNIK_CFLAGS=""
+    MAPNIK_INCLUDES=""
     MAPNIK_LDFLAGS=""
     MAPNIK_VERSION=""
 
@@ -86,6 +87,10 @@ AC_DEFUN([AX_LIB_MAPNIK],
 	            AC_MSG_CHECKING([for mapnik libraries])
 
         	    MAPNIK_CFLAGS="`$MAPNIK_CONFIG --cflags`"
+                MAPNIK_INCLUDES="`$MAPNIK_CONFIG --includes`"
+                if test $? -ne 0; then
+                    MAPNIK_INCLUDES=""
+                fi
         	    MAPNIK_LDFLAGS="`$MAPNIK_CONFIG --libs`"
 
         	    MAPNIK_VERSION=`$MAPNIK_CONFIG --version`
@@ -104,6 +109,7 @@ AC_DEFUN([AX_LIB_MAPNIK],
 
     AC_SUBST([MAPNIK_VERSION])
     AC_SUBST([MAPNIK_CFLAGS])
+    AC_SUBST([MAPNIK_INCLUDES])
     AC_SUBST([MAPNIK_LDFLAGS])
 ])
 

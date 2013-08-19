@@ -6,8 +6,8 @@ AX_CONFIG_NICE
 AC_INIT(mod_tile, 0.1, http://trac.openstreetmap.org)
 AM_INIT_AUTOMAKE(mod_tile,0.1)
 LT_INIT
-AC_CONFIG_SRCDIR([convert_meta.c])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_SRCDIR([src/convert_meta.c])
+AC_CONFIG_HEADERS([includes/config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 # Checks for programs.
@@ -45,6 +45,7 @@ AC_SEARCH_LIBS(socket, socket)
 AC_SEARCH_LIBS(inet_ntoa, nsl)
 AC_SEARCH_LIBS(gethostbyname, resolv nsl)
 AC_SEARCH_LIBS(pow,m)
+AC_SEARCH_LIBS(clock_gettime,[rt posix4])
 AX_BOOST_BASE
 #AC_CHECK_ICU(4.2)
 AX_LIB_MAPNIK

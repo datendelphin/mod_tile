@@ -16,12 +16,16 @@
 
 // MAX_LOAD_OLD: if tile is out of date, don't re-render it if past this load threshold (users gets old tile)
 // (This is the default value. Can be overwritten in Apache config with ModTileMaxLoadOld.)
-#define MAX_LOAD_OLD 5
+#define MAX_LOAD_OLD 16
 // MAX_LOAD_MISSING: if tile is missing, don't render it if past this load threshold (user gets 404 error)
 // (This is the default value. Can be overwritten in Apache config with ModTileMaxLoadMissing.)
-#define MAX_LOAD_MISSING 10
+#define MAX_LOAD_MISSING 50
 // MAX_LOAD_ANY: give up serving any data if beyond this load (user gets 404 error)
 #define MAX_LOAD_ANY 100
+
+//VERYOLD_THRESHOLD: defines how old a tile needs to be (in microseconds) to get rendering priority rather than renderingLow priority
+//1000000*3600*24*365 = 31536000000000
+#define VERYOLD_THRESHOLD 31536000000000
 
 // Location of osm.xml file
 #define RENDERD_CONFIG "/etc/renderd.conf"

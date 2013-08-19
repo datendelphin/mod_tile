@@ -138,7 +138,7 @@ static enum protoCmd pending(struct request_queue * queue, struct item *test) {
 
     item = lookup_item_idx(queue, test);
     if (item != NULL) {
-        if ((item->inQueue == queueRender) || (item->inQueue == queueRequest) || (item->inQueue == queueRequestPrio)) {
+        if ((item->inQueue == queueRender) || (item->inQueue == queueRequest) || (item->inQueue == queueRequestPrio) || (item->inQueue == queueRequestLow)) {
             test->duplicates = item->duplicates;
             item->duplicates = test;
             test->inQueue = queueDuplicate;
@@ -156,7 +156,7 @@ struct item *request_queue_fetch_request(struct request_queue * queue) {
 
     pthread_mutex_lock(&(queue->qLock));
 
-    while ((queue->reqNum == 0) && (queue->dirtyNum == 0) && (queue->reqPrioNum == 0) && (queue->reqBulkNum == 0)) {
+    while ((queue->reqNum == 0) && (queue->dirtyNum == 0) && (queue->reqLowNum == 0) && (queue->reqPrioNum == 0) && (queue->reqBulkNum == 0)) {
         pthread_cond_wait(&(queue->qCond), &(queue->qLock));
     }
     if (queue->reqPrioNum) {
@@ -167,6 +167,10 @@ struct item *request_queue_fetch_request(struct request_queue * queue) {
         item = queue->reqHead.next;
         queue->reqNum--;
         queue->stats.noReqRender++;
+    } else if (queue->reqLowNum) {
+        item = queue->reqLowHead.next;
+        queue->reqLowNum--;
+        queue->stats.noReqLowRender++;
     } else if (queue->dirtyNum) {
         item = queue->dirtyHead.next;
         queue->dirtyNum--;
@@ -260,18 +264,27 @@ enum protoCmd request_queue_add_request(struct request_queue * queue, struct ite
     if ((req->cmd == cmdRender) && (queue->reqNum < REQ_LIMIT)) {
         list = &(queue->reqHead);
         item->inQueue = queueRequest;
+        item->originatedQueue = queueRequest;
         queue->reqNum++;
     } else if ((req->cmd == cmdRenderPrio) && (queue->reqPrioNum < REQ_LIMIT)) {
         list = &(queue->reqPrioHead);
         item->inQueue = queueRequestPrio;
+        item->originatedQueue = queueRequestPrio;
         queue->reqPrioNum++;
+    } else if ((req->cmd == cmdRenderLow) && (queue->reqLowNum < REQ_LIMIT)) {
+        list = &(queue->reqLowHead);
+        item->inQueue = queueRequestLow;
+        item->originatedQueue = queueRequestLow;
+        queue->reqLowNum++;
     } else if ((req->cmd == cmdRenderBulk) && (queue->reqBulkNum < REQ_LIMIT)) {
         list = &(queue->reqBulkHead);
         item->inQueue = queueRequestBulk;
+        item->originatedQueue = queueRequestBulk;
         queue->reqBulkNum++;
     } else if (queue->dirtyNum < DIRTY_LIMIT) {
         list = &(queue->dirtyHead);
         item->inQueue = queueDirty;
+        item->originatedQueue = queueDirty;
         queue->dirtyNum++;
         item->fd = FD_INVALID; // No response after render
     } else {
@@ -307,6 +320,13 @@ void request_queue_remove_request(struct request_queue * queue, struct item * re
         syslog(LOG_WARNING, "Removing request from queue, even though not on rendering queue");
     }
     if (render_time > 0) {
+        switch (request->originatedQueue) {
+        case queueRequestPrio: { queue->stats.timeReqPrioRender += render_time; break;}
+        case queueRequest: { queue->stats.timeReqRender += render_time; break;}
+        case queueRequestLow: { queue->stats.timeReqLowRender += render_time; break;}
+        case queueDirty: { queue->stats.timeReqDirty += render_time; break;}
+        case queueRequestBulk: { queue->stats.timeReqBulkRender += render_time; break;}
+        }
         queue->stats.noZoomRender[request->req.z]++;
         queue->stats.timeZoomRender[request->req.z] += render_time;
     }
@@ -325,6 +345,9 @@ int request_queue_no_requests_queued(struct request_queue * queue, enum protoCmd
         break;
     case cmdRender:
         noReq = queue->reqNum;
+        break;
+    case cmdRenderLow:
+        noReq = queue->reqLowNum;
         break;
     case cmdDirty:
         noReq = queue->dirtyNum;
@@ -368,10 +391,12 @@ struct request_queue * request_queue_init() {
     queue->stats.noReqDroped = 0;
     queue->stats.noReqRender = 0;
     queue->stats.noReqPrioRender = 0;
+    queue->stats.noReqLowRender = 0;
     queue->stats.noReqBulkRender = 0;
 
     queue->reqHead.next = queue->reqHead.prev = &(queue->reqHead);
     queue->reqPrioHead.next = queue->reqPrioHead.prev = &(queue->reqPrioHead);
+    queue->reqLowHead.next = queue->reqLowHead.prev = &(queue->reqLowHead);
     queue->reqBulkHead.next = queue->reqBulkHead.prev = &(queue->reqBulkHead);
     queue->dirtyHead.next = queue->dirtyHead.prev = &(queue->dirtyHead);
     queue->renderHead.next = queue->renderHead.prev = &(queue->renderHead);
