@@ -3,8 +3,6 @@ set -e
 
 if [ "$1" = configure ] ; then
 
-    . /usr/share/debconf/confmodule
-
     mkdir -p /var/lib/mod_tile
     chown www-data:www-data /var/lib/mod_tile
 
