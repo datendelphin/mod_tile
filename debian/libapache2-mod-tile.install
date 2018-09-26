@@ -4,4 +4,3 @@ readme.txt /usr/share/doc/libapache2-mod-tile
 munin/mod_tile* /usr/share/munin/plugins
 openstreetmap-tiles-update-expire /usr/bin/
 osmosis-db_replag /usr/bin
-slippymap.html /var/www/osm
